@@ -1,0 +1,12 @@
+
+[Unit]
+Description=Lightweight container control
+
+[Service]
+ExecStart=/opt/sandbox/startall.sh
+ExecStop=/opt/sandbox/liteco.sh stop all
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+
