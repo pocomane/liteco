@@ -35,7 +35,7 @@ To prepare the image, e.g. using Arch Linux:
 ```
 pacman -S arch-install-scripts
 mkdir container_pacman_amd64/
-pacstrap container_pacman_amd64/ pacman
+pacstrap -K container_pacman_amd64/ pacman archlinux-keyring
 ```
 
 Minimal configuration:
@@ -62,7 +62,15 @@ inside the container it is mounted on /shared
 Install software (again, using Arch `pacman`):
 
 ```
-./liteco.sh run container_test_001 pacman -S syncthing
+./liteco.sh run container_test_001 pacman -S gzip
+```
+
+Locale setup (needed for several software):
+
+```
+./liteco.sh run container_test_001 pacman -S gzip sed
+echo "en_US.UTF-8 UTF-8" >> container_test_001/etc/locale.gen
+./liteco.sh run container_test_001 locale-gen
 ```
 
 The previous is the same of running `pacman -S syncthing` in a contained shell.
