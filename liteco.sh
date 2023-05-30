@@ -120,6 +120,8 @@ startas(){
   echo "interrupting $PIDS"
   kill $PIDS
 
+  sleep 3
+
   process_tree $PIDS
   echo "killing $PIDS"
   kill -09 $PIDS
