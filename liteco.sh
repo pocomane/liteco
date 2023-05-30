@@ -88,7 +88,7 @@ startas(){
   shift
   CMDLIN="$@"
   
-  RUNFILE="$RUNPREFIX$CONTNAME"
+  RUNFILE="$RUNPREFIX${CONTNAME%/}"
   
   echo "container: $CONTNAME / args: $CMDLIN"
   
@@ -100,17 +100,29 @@ startas(){
   
   inotifywait -e delete "$RUNFILE"
   
-  TOKILL=""
-  recochildren() {
-    TOKILL="$TOKILL $1"
-    local CHILDREN=$(ps -o pid= --ppid "$1")
-    for pid in $CHILDREN ; do
-      recochildren "$pid"
+  children_reco() {
+    for ppid in $@ ; do
+      if [ ! -z "$(ps -o pid= --pid $ppid)" ] ; then # check parent still exists
+        PIDS="$PIDS $ppid" # add parent to the list
+        local PART=$(ps -o pid= --ppid "$ppid") # find all the children
+        for pid in $PART ; do # loop on every child
+          children_reco "$pid" # recurse find children
+        done
+      fi
     done
   }
+  process_tree(){
+    PIDS=""
+    children_reco $@
+  }
   
-  recochildren $MAINPID
-  kill $TOKILL
+  process_tree $MAINPID
+  echo "interrupting $PIDS"
+  kill $PIDS
+
+  process_tree $PIDS
+  echo "killing $PIDS"
+  kill -09 $PIDS
 }
 
 stopit(){
@@ -122,7 +134,11 @@ stopit(){
   if [ "$CONTNAME" = "all" ] ; then
     rm -f "$RUNPREFIX"*
   else
-    rm -f "$RUNFILE"
+    if [ -f "$RUNFILE" ] ; then
+      rm -f "$RUNFILE"
+    else
+      echo "no container '$CONTNAME' found ($RUNFILE)" 1>&2
+    fi
   fi
 
 }
