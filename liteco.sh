@@ -6,6 +6,8 @@ CONTDIR="$(readlink -f "$UTILDIR/.")"
 STATUSDIR="/tmp/containerlite_status"
 RUNPREFIX="$STATUSDIR/running_"
 
+USER="admin" # "restricted"
+
 runin(){
 
   CONTNAME="$1"
@@ -18,17 +20,20 @@ runin(){
   
   ROOTFS="$CONTDIR/$CONTNAME"
   cd "$ROOTFS"
-  
+ 
+  LITECO_ID="0"
+  if [ "$USER" = "restricted" ] ; then
+    LITECO_ID="1000"
+  fi
+
   bwrap \
     \
     --cap-add ALL \
-    --uid 0 \
-    --gid 0 \
-    --as-pid-1 \
-    --unshare-pid \
+    --uid "$LITECO_ID" \
+    --gid "$LITECO_ID" \
     --unshare-ipc \
-    --unshare-user \
     --unshare-uts \
+    $LITECO_SHARE_NS \
     \
     --bind "$ROOTFS"/ / \
     --bind "$CONTDIR/share"/ /share \
@@ -145,16 +150,26 @@ stopit(){
 
 }
 
-SUBCMD="$1"
-shift
-if   [ "run" = "$SUBCMD" ] ; then
-  runin $@
-elif [ "go" = "$SUBCMD" ] ; then
-  startas $@
-elif [ "stop" = "$SUBCMD" ] ; then
-  stopit $@
-else
-  echo "unknown command $SUBCMD" 1>&2
-  exit 13
-fi
+while true ; do
+  ARG="$1"
+  shift
+  if   [ "run" = "$ARG" ] ; then
+    runin $@
+    exit 0
+  elif [ "go" = "$ARG" ] ; then
+    startas $@
+    exit 0
+  elif [ "stop" = "$ARG" ] ; then
+    stopit $@
+    exit 0
+  elif [ "-u" = "$ARG" ] ; then
+    USER="restricted"
+  else
+    echo "unknown command $ARG" 1>&2
+    exit 13
+  fi
+done
+echo "no command to run $ARG" 1>&2
+exit 13
+
 
