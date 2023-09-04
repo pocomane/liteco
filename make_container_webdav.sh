@@ -157,6 +157,14 @@ server {
   index index.html index.htm index.nginx-debian.html;
   server_name _;
 
+  add_header 'Access-Control-Allow-Origin' '*' always;
+  add_header 'Access-Control-Allow-Methods' '*' always;
+  add_header 'Access-Control-Allow-Headers' '*' always;
+  add_header 'Access-Control-Expose-Headers' '*' always;
+  if (\$request_method = OPTIONS){
+    return 200;
+  }
+
   location / {
     dav_ext_methods PROPFIND OPTIONS;
     dav_access user:r group:r all:r;
